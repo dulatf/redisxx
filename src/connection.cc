@@ -38,7 +38,7 @@ EventState handle_read(Connection &con) {
   }
   const std::string command_string = command_args.front().to_string();
   command_args.erase(command_args.begin());
-  auto command_response = handle_command(command_string, command_args);
+  auto command_response = dispatch_commands(command_string, command_args);
   if (!command_response) {
     std::cerr << "Failed to handle command `" << command_string << "`\n";
     return EventState::Idle;

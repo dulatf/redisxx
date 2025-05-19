@@ -2,6 +2,7 @@
 #include <concepts>
 #include <functional>
 #include <optional>
+#include <ranges>
 #include <span>
 #include <string>
 #include <unordered_map>
@@ -28,11 +29,11 @@ class CommandRegistry {
     return it->second(arguments);
   }
 
-  RespArray list_commands() {
-    RespArray result;
+  std::vector<std::string> list_commands() {
+    std::vector<std::string> result;
     result.reserve(commands.size());
     for (const auto& [name, _] : commands) {
-      result.push_back(RespValue::make_string(name));
+      result.push_back(name);
     }
     return result;
   }
@@ -58,5 +59,7 @@ struct CommandRegistrar {
   }
 };
 
-std::optional<RespValue> handle_command(RespString command,
-                                        const RespArray& arguments);
+std::string to_lower(const std::string& s);
+
+std::optional<RespValue> dispatch_commands(RespString command,
+                                           const RespArray& arguments);

@@ -7,18 +7,13 @@
 #include <vector>
 
 struct RespValue;
-namespace std {
-template <>
-struct hash<RespValue>;
-}
-
 using RespString = std::string;
 using RespInteger = long;
 using RespArray = std::vector<RespValue>;
 struct RespError {
   std::string message;
 };
-using RespMap = std::unordered_map<RespValue, RespValue>;
+using RespMap = std::unordered_map<RespString, RespValue>;
 
 template <typename... Ts>
 struct Overload : Ts... {
@@ -59,11 +54,9 @@ struct RespValue {
   static RespValue make_error(std::string message) {
     return RespValue(RespError{.message = std::move(message)});
   }
-  static RespValue make_map(std::unordered_map<RespValue, RespValue> map) {
+  static RespValue make_map(std::unordered_map<RespString, RespValue> map) {
     return RespValue(std::move(map));
   }
-
-  bool operator==(const RespValue& other) const { return value == other.value; }
 
   std::string to_string() const {
     auto display_fn = Overload{
@@ -87,7 +80,7 @@ struct RespValue {
           std::ostringstream oss;
           oss << "{";
           for (const auto& [k, v] : map) {
-            oss << k.to_string() << ": " << v.to_string() << ", ";
+            oss << k << ": " << v.to_string() << ", ";
           }
           oss << "}";
           return oss.str();
@@ -139,7 +132,7 @@ struct RespValue {
           std::ostringstream oss;
           oss << "%" << map.size() << "\r\n";
           for (const auto& [k, v] : map) {
-            oss << k.to_protocol_representation()
+            oss << RespValue::make_string(k).to_protocol_representation()
                 << v.to_protocol_representation();
           }
           return oss.str();
@@ -148,12 +141,3 @@ struct RespValue {
     return std::visit(visitor, this->value);
   }
 };
-
-namespace std {
-template <>
-struct hash<RespValue> {
-  size_t operator()(const RespValue& val) const {
-    return std::hash<std::string>()(val.to_protocol_representation());
-  }
-};
-}  // namespace std
