@@ -67,13 +67,3 @@ std::optional<RespValue> parse_resp_code(std::string input) {
     return std::get<0>(*parse_result);
   }
 }
-
-int main(int argc, char** argv) {
-  const char* input = "*3\r\n$3\r\nfoo\r\n+lolol whatup\r\n:42\r\n";
-  auto parsed = parse_resp_code(input);
-  if (!parsed) {
-    std::cout << "Failed to parse `" << input << "`\n";
-    return 0;
-  }
-  std::cout << parsed->to_string() << std::endl;
-}
