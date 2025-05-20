@@ -14,6 +14,7 @@ struct RespError {
   std::string message;
 };
 using RespMap = std::unordered_map<RespString, RespValue>;
+struct RespNull {};
 
 template <typename... Ts>
 struct Overload : Ts... {
@@ -23,7 +24,8 @@ template <class... Ts>
 Overload(Ts...) -> Overload<Ts...>;
 
 struct RespValue {
-  std::variant<RespString, RespInteger, RespArray, RespError, RespMap> value;
+  std::variant<RespString, RespInteger, RespArray, RespError, RespMap, RespNull>
+      value;
   RespValue() = default;  // Default constructor
                           // Explicitly define copy operations
   RespValue(const RespValue& other) = default;
@@ -45,6 +47,8 @@ struct RespValue {
   RespValue(RespError&& e) : value(std::move(e)) {}
   RespValue(const RespMap& m) : value(m) {}
   RespValue(RespMap&& m) : value(std::move(m)) {}
+  RespValue(const RespNull& n) : value(n) {}
+  RespValue(RespNull&& n) : value(std::move(n)) {}
 
   static RespValue make_string(std::string s) {
     return RespValue(std::move(s));
@@ -57,6 +61,7 @@ struct RespValue {
   static RespValue make_map(std::unordered_map<RespString, RespValue> map) {
     return RespValue(std::move(map));
   }
+  static RespValue make_null() { return RespValue(RespNull{}); }
 
   std::string to_string() const {
     auto display_fn = Overload{
@@ -84,7 +89,8 @@ struct RespValue {
           }
           oss << "}";
           return oss.str();
-        }};
+        },
+        [](RespNull _) -> std::string { return "NIL"; }};
     return std::visit(display_fn, this->value);
   }
 
@@ -100,7 +106,9 @@ struct RespValue {
             arr.push_back(RespValue::make_array({k, v}));
           }
           return RespArray(arr);
-        }};
+        },
+        [](RespNull _) { return RespArray({}); },
+    };
     return std::visit(visitor, this->value);
   }
   std::string to_protocol_representation() const {
@@ -137,6 +145,7 @@ struct RespValue {
           }
           return oss.str();
         },
+        [](RespNull _) { return std::string("_\r\n"); },
     };
     return std::visit(visitor, this->value);
   }
