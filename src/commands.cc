@@ -45,9 +45,10 @@ std::optional<RespValue> extract_option_value(const RespArray &arguments,
 std::optional<RespValue> dispatch_commands(RespString command,
                                            const RespArray &arguments) {
   std::cout << "Attempting to handle command `" << command
-            << "` with argument types\n";
+            << "` with arguments\n";
   for (const auto &arg : arguments) {
-    std::cout << "- " << arg.debug_format_type() << "\n";
+    std::cout << "- " << arg.debug_format_type() << " :: " << arg.to_string()
+              << "\n";
   }
   const auto result =
       CommandRegistry::instance().execute_command(to_lower(command), arguments);
@@ -226,3 +227,22 @@ RespValue handle_decrby(const RespArray &arguments) {
   return inner_incrby(key, -(*increment));
 }
 CommandRegistrar _handle_decrby("decrby", handle_decrby);
+
+RespValue handle_config(const RespArray &arguments) {
+  if (arguments.size() != 2) {
+    return RespValue::make_error("ERR wrong number of arguments for CONFIG");
+  }
+  if (to_lower(arguments[0].to_string()) != "get") {
+    return RespValue::make_error("ERR unsupported sub command for CONFIG: " +
+                                 arguments[0].to_string());
+  }
+  static std::unordered_map<RespString, RespString> config_map(
+      {{"save", ""}, {"appendonly", "no"}});
+  auto config_val = config_map.find(arguments[1].to_string());
+  if (config_val == config_map.end()) {
+    std::cout << "Unknown config key: `" << arguments[1].to_string() << "`\n";
+    return RespValue::make_string("");
+  }
+  return RespValue::make_string(config_val->second);
+}
+CommandRegistrar _handle_config("config", handle_config);
