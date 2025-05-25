@@ -111,6 +111,25 @@ struct RespValue {
     };
     return std::visit(visitor, this->value);
   }
+
+  std::optional<RespInteger> to_int_safe() const {
+    const auto visitor = Overload{
+        [](RespArray arr) -> std::optional<RespInteger> {
+          return std::nullopt;
+        },
+        [](RespString str) -> std::optional<RespInteger> {
+          return RespInteger(std::stoi(str));
+        },
+        [](RespInteger num) -> std::optional<RespInteger> { return num; },
+        [](RespError err) -> std::optional<RespInteger> {
+          return std::nullopt;
+        },
+        [](RespMap map) -> std::optional<RespInteger> { return std::nullopt; },
+        [](RespNull _) -> std::optional<RespInteger> { return std::nullopt; },
+    };
+    return std::visit(visitor, this->value);
+  }
+
   std::string to_protocol_representation() const {
     const auto visitor = Overload{
         [](RespArray arr) {
@@ -148,5 +167,15 @@ struct RespValue {
         [](RespNull _) { return std::string("_\r\n"); },
     };
     return std::visit(visitor, this->value);
+  }
+  std::string debug_format_type() const {
+    auto display_fn =
+        Overload{[](RespString _) -> std::string { return "RespString"; },
+                 [](RespInteger _) -> std::string { return "RespInteger"; },
+                 [](RespArray _) -> std::string { return "RespArray"; },
+                 [](RespError _) -> std::string { return "RespError"; },
+                 [](RespMap _) -> std::string { return "RespMap"; },
+                 [](RespNull _) -> std::string { return "RespNull"; }};
+    return std::visit(display_fn, this->value);
   }
 };
