@@ -1,5 +1,16 @@
 # redisxx
 
+A very simple Redis clone written in C++23. 
+
+Probably only works on MacOS as it uses `kevent` for async connections.
+
+Has a simple parser combinator library to implement an overly complicated RESP parser.
+
+Implements a few core Redis commands but only responds in RESPv3.
+
+
+## Motivation
+
 Build your own Redis in C++
 
 Based on <https://build-your-own.org/redis/>
